@@ -1,0 +1,125 @@
+{
+  "coverage": {
+    "llm": 150,
+    "nrc": 44,
+    "n": 150
+  },
+  "n_with_both": 44,
+  "agreement": 44,
+  "n_agree": 7,
+  "agree_rate": 0.1591,
+  "llm_dist": {
+    "joy": 47,
+    "sadness": 17,
+    "anger": 64,
+    "trust": 17,
+    "surprise": 1,
+    "anticipation": 3,
+    "fear": 1
+  },
+  "nrc_dist": {
+    "joy": 9,
+    "anticipation": 17,
+    "trust": 12,
+    "disgust": 1,
+    "surprise": 1,
+    "fear": 1,
+    "sadness": 2,
+    "anger": 1
+  },
+  "matrix": {
+    "joy": {
+      "joy": 5,
+      "trust": 2,
+      "anticipation": 1
+    },
+    "sadness": {
+      "anticipation": 4,
+      "joy": 2
+    },
+    "trust": {
+      "anticipation": 1,
+      "joy": 1,
+      "trust": 1
+    },
+    "anger": {
+      "trust": 9,
+      "disgust": 1,
+      "anticipation": 10,
+      "surprise": 1,
+      "fear": 1,
+      "sadness": 2,
+      "anger": 1,
+      "joy": 1
+    },
+    "surprise": {
+      "anticipation": 1
+    }
+  },
+  "divergent": [
+    {
+      "idx": 1,
+      "llm": "sadness",
+      "nrc": "anticipation",
+      "title": "I gave these as christmas gifts to my nieces and ...",
+      "text": "I gave these as christmas gifts to my nieces and nephews. They appreciated the gift and credit card of their own feel. Unfortunately Auntie was expected to take",
+      "rating": 3.0
+    },
+    {
+      "idx": 6,
+      "llm": "trust",
+      "nrc": "anticipation",
+      "title": "As expected",
+      "text": "As expected",
+      "rating": 3.0
+    },
+    {
+      "idx": 11,
+      "llm": "anger",
+      "nrc": "trust",
+      "title": "Don\u2019t expect this card to function like a typical Visa",
+      "text": "Don\u2019t buy this card. This card doesn\u2019t work with Apple Wallet (cannot get added). It doesn\u2019t work at gas station either. I ended up adding it back to my Amazon ",
+      "rating": 1.0
+    },
+    {
+      "idx": 14,
+      "llm": "sadness",
+      "nrc": "joy",
+      "title": "Love the iTunes but no good \ud83d\ude22",
+      "text": "The numbers & letters is wrong I want a new<br />$200.00 card. Because the one I have look like someone had used it. I scratch it off but someone<br />knew the ",
+      "rating": 1.0
+    },
+    {
+      "idx": 20,
+      "llm": "trust",
+      "nrc": "joy",
+      "title": "Gift card",
+      "text": "Excellent seller and product",
+      "rating": 5.0
+    },
+    {
+      "idx": 21,
+      "llm": "anger",
+      "nrc": "trust",
+      "title": "Auto-Renewal caused a big problem",
+      "text": "Even though the price was great, I can't recommend purchasing Office 365 through Amazon.  Cancelling the auto-renewal was easy but in the eyes of MS, my office ",
+      "rating": 1.0
+    },
+    {
+      "idx": 23,
+      "llm": "surprise",
+      "nrc": "anticipation",
+      "title": "Almost threw it in the trash! Needs better labeling on outside envelope.",
+      "text": "I love Amazon and shop continuously on it.  I bought a gift card for my mom for Xmas and the tracking info actually said I would get it one day earlier than the",
+      "rating": 3.0
+    },
+    {
+      "idx": 32,
+      "llm": "anger",
+      "nrc": "trust",
+      "title": "Don\u2019t travel with Amazon credits.",
+      "text": "I tried to add some funds to purchase a movie and it let me add the funds but not use them to purchase the movies because I was out of the country when attempti",
+      "rating": 1.0
+    }
+  ]
+}

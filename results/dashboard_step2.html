@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentiment Results · MBAX 6418</title>
+<style>
+  :root {
+    --bg:#fbfaf7; --surface:#ffffff; --ink:#1c1b18; --muted:#7a7468;
+    --border:#e7e2d7; --accent:#2563eb; --accent-ink:#ffffff;
+    --pos:#0f9d58; --neg:#d93025; --warn:#f4b400;
+    --radius:14px; --shadow:0 1px 3px rgba(28,27,24,.06),0 8px 24px rgba(28,27,24,.06);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font);
+          -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:1180px; margin:0 auto; padding:40px 24px 80px; }
+  header.hero { margin-bottom:28px; }
+  header.hero .eyebrow { text-transform:uppercase; letter-spacing:.16em; font-size:12px;
+          color:var(--accent); font-weight:600; }
+  header.hero h1 { font-size:30px; margin:8px 0 6px; letter-spacing:-.02em; }
+  header.hero p { color:var(--muted); margin:0; max-width:62ch; }
+
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .kpi { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+          box-shadow:var(--shadow); padding:20px; }
+  .kpi .kpi-value { font-size:34px; font-weight:700; letter-spacing:-.02em; line-height:1; }
+  .kpi .kpi-label { color:var(--muted); font-size:13px; margin-top:8px; }
+  .kpi.accent { background:var(--accent); color:var(--accent-ink); border:none; }
+  .kpi.accent .kpi-label { color:rgba(255,255,255,.8); }
+  .kpi.kpi-bad .kpi-value { color:var(--neg); }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+           box-shadow:var(--shadow); padding:22px; }
+  .card h3 { margin:0 0 4px; font-size:16px; }
+  .card p.sub { color:var(--muted); font-size:13px; margin:0 0 16px; }
+
+  table.cm { width:100%; border-collapse:collapse; }
+  table.cm th, table.cm td { padding:12px 14px; text-align:center; font-size:14px; }
+  table.cm th { color:var(--muted); font-weight:500; }
+  .cm-cell { border-radius:10px; padding:12px; }
+  .cm-cell b { font-size:24px; display:block; }
+  .cm-cell span { font-size:11px; text-transform:uppercase; letter-spacing:.06em; }
+  .cm-cell.hit { background:color-mix(in srgb, var(--pos) 14%, transparent); }
+  .cm-cell.miss { background:color-mix(in srgb, var(--neg) 12%, transparent); }
+
+  .bar-row { display:grid; grid-template-columns:60px 1fr 120px; gap:12px; align-items:center; margin-bottom:14px; }
+  .bar-label { font-size:13px; font-weight:600; }
+  .bar-track { background:#f0ede4; border-radius:999px; height:16px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:999px; }
+  .bar-fill.positive { background:var(--pos); }
+  .bar-fill.negative { background:var(--neg); }
+  .bar-fill.truth-positive { background:var(--pos); opacity:.9; }
+  .bar-fill.truth-negative { background:var(--neg); opacity:.9; }
+  .bar-fill.pred-positive { background:var(--warn); }
+  .bar-fill.pred-negative { background:#8e6b12; }
+  .bar-val { font-size:13px; color:var(--muted); text-align:right; }
+  .dist-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .dist h4 { margin:0 0 12px; font-size:14px; color:var(--muted); font-weight:600; }
+
+  .table-card { padding:0; overflow:hidden; }
+  .table-head { display:flex; align-items:center; justify-content:space-between; gap:16px;
+          padding:20px 22px; border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .table-head h3 { margin:0; }
+  .controls { display:flex; align-items:center; gap:12px; }
+  .controls label { font-size:13px; color:var(--muted); }
+  #filter { font:inherit; padding:6px 10px; border:1px solid var(--border); border-radius:8px;
+            background:var(--surface); color:var(--ink); }
+  .count { font-size:13px; font-weight:600; background:#f0ede4; padding:4px 10px; border-radius:999px; }
+  .tbl-scroll { max-height:560px; overflow:auto; }
+  table.rev { width:100%; border-collapse:collapse; font-size:13px; }
+  table.rev th { position:sticky; top:0; background:var(--surface); text-align:left;
+          padding:10px 14px; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+          color:var(--muted); border-bottom:1px solid var(--border); z-index:1; }
+  table.rev td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.rev .idx { color:var(--muted); }
+  table.rev .title { font-weight:600; max-width:220px; }
+  table.rev .text { color:var(--ink); max-width:460px; line-height:1.45; }
+  .row-wrong { background:color-mix(in srgb, var(--neg) 5%, transparent); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .tag.truth { background:#f0ede4; color:var(--muted); }
+  .tag.ok { color:var(--pos); }
+  .tag.bad { color:var(--neg); }
+  .tag.hit { background:color-mix(in srgb,var(--pos) 14%,transparent); color:var(--pos); }
+  .tag.miss { background:color-mix(in srgb,var(--neg) 13%,transparent); color:var(--neg); }
+
+  @media (max-width:820px){
+    .grid{grid-template-columns:1fr} .kpi-row{grid-template-columns:repeat(2,1fr)}
+    .dist-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">MBAX 6418 · Assignment 1 · Step 2 run</div>
+    <h1>Sentiment classification results</h1>
+    <p>Binary classifier (DeepSeek-V4-Flash-0731 via the course OpenAI-compatible endpoint) on the first
+    100 Gift Cards reviews from Amazon Reviews '23, scored against the star rating (≥4 positive, else negative).
+    The model never saw the ratings.</p>
+  </header>
+
+  
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-value">100</div>
+        <div class="kpi-label">Reviews scored</div>
+      </div>
+      <div class="kpi accent">
+        <div class="kpi-value">99.0%</div>
+        <div class="kpi-label">Overall accuracy</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">99</div>
+        <div class="kpi-label">Correct</div>
+      </div>
+      <div class="kpi kpi-bad">
+        <div class="kpi-value">1</div>
+        <div class="kpi-label">Mismatched</div>
+      </div>
+    </div>
+    
+
+  <div class="grid">
+    
+    <div class="card">
+      <h3>Confusion matrix</h3>
+      <p class="sub">Rows are the star-derived truth; columns are what the model said.</p>
+      <table class="cm"><thead><tr><th></th><th>→ predicted POSITIVE</th><th>→ predicted NEGATIVE</th></tr></thead><tbody><tr><th>POSITIVE (truth)</th><td><div class="cm-cell hit"><b>93</b><span>match</span></div></td><td><div class="cm-cell miss"><b>0</b><span>mismatch</span></div></td></tr><tr><th>NEGATIVE (truth)</th><td><div class="cm-cell miss"><b>1</b><span>mismatch</span></div></td><td><div class="cm-cell hit"><b>6</b><span>match</span></div></td></tr></tbody></table>
+    </div>
+    
+    
+    <div class="card">
+      <h3>Per-class accuracy</h3>
+      <p class="sub">How often the model is right on each class.</p>
+      
+        <div class="bar-row">
+          <span class="bar-label">Pos</span>
+          <div class="bar-track"><div class="bar-fill positive" style="width:100.0%"></div></div>
+          <span class="bar-val">93/93 · 100%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">Neg</span>
+          <div class="bar-track"><div class="bar-fill negative" style="width:85.7%"></div></div>
+          <span class="bar-val">6/7 · 86%</span>
+        </div>
+    </div>
+    
+  </div>
+
+  
+    <div class="card">
+      <h3>Class distribution</h3>
+      <p class="sub">The data is lopsided toward positive — see how the balance shifts.</p>
+      <div class="dist-grid"><div class="dist"><h4>Truth (from stars)</h4>
+            <div class="bar-row">
+              <span class="bar-label">P</span>
+              <div class="bar-track"><div class="bar-fill truth-positive" style="width:98.9%"></div></div>
+              <span class="bar-val">93</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">N</span>
+              <div class="bar-track"><div class="bar-fill truth-negative" style="width:7.4%"></div></div>
+              <span class="bar-val">7</span>
+            </div></div><div class="dist"><h4>Predicted</h4>
+            <div class="bar-row">
+              <span class="bar-label">P</span>
+              <div class="bar-track"><div class="bar-fill pred-positive" style="width:100.0%"></div></div>
+              <span class="bar-val">94</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">N</span>
+              <div class="bar-track"><div class="bar-fill pred-negative" style="width:6.4%"></div></div>
+              <span class="bar-val">6</span>
+            </div></div></div>
+    </div>
+    
+
+  
+    <div class="card table-card">
+      <div class="table-head">
+        <h3>Review detail</h3>
+        <div class="controls">
+          <label for="filter">Show
+            <select id="filter">
+              <option value="all">All</option>
+              <option value="match">Matches only</option>
+              <option value="mismatch">Mismatches only</option>
+            </select>
+          </label>
+          <span class="count" id="count"></span>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="rev">
+          <thead><tr><th>#</th><th>Rating</th><th>Title</th><th>Text</th><th>Truth</th><th>Model</th><th>Verdict</th></tr></thead>
+          <tbody id="tbody">
+        <tr class="">
+          <td class="idx">0</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great gift</td>
+          <td class="text">Having Amazon money is always good.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">1</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">amazon gift card</td>
+          <td class="text">Always the perfect gift.  I have never given one and had someone seem or act disappointed.  Just the opposite.  They are thrilled and excited to have a bit of a spree.  Always the perfect size and color!  Arrives in 1 day in most cases.  So it's never too late!  Lots of cards to chose from... thank you... birthday... wedding..baby..  and many that work for many occasions...</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">2</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">perfect gift</td>
+          <td class="text">When you have a person who is hard to shop for.. an amazon gift card is P E R F E C T.  Man or woman...  No matter what their hobby... lifestyle.. or age.  All you have to do is pick the $.  Don't forget to mention that it is a GIFT when you check out - you will have some gift card options.  I've ordered many of these over years.  They are always received with glee.  Woo hoo!  If you're looking for a great fit for me - this is just my size!  :)  Best to all!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">3</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Nice looking</td>
+          <td class="text">The tin is a nice touch and pretty large.  It's about 4&#34; in diameter and about 1/2&#34; thick.  I added a pretty red ribbon and it is perfect.  Who doesn't love shopping on Amazon? Arrived quickly, I have Prime... but I think they ship the gift cards out SUPER fast... like over night. In case you need it for a FAST gift.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">4</td>
+          <td>⭐</td>
+          <td class="title">Not $10 Gift Cards</td>
+          <td class="text">I bought this pack of Starbucks Gift cards in 2019. Ive given them to friends and I gave 2 to my daughter.<br />My daughter used one recently and it had $6.52 on the card not $10.00. She had the cashier check the balance of the other card and it had $5.32 on it! She had forgotten that she had these gift cards, so yes, 2 years later decided to use the when she found them! Do they decline in value? And then both had random amounts on them! I'm embarrassed now to have given them as gifts! Friends receiving the gift card aren't going to tell you that weren't able to cover their order with the card you gave them!!!</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag ok">N</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">5</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Cute!</td>
+          <td class="text">That snowman tin is adorable</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">6</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Easy gift</td>
+          <td class="text">Great and easy gift</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">7</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great gift</td>
+          <td class="text">Super cute nice quality tin<br />Your choose amount</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">8</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gifts for my two granddaughters</td>
+          <td class="text">They love it !!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">9</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great for saying “thank you” to the mail person, farrier, yard man,etc</td>
+          <td class="text">So many people<br />Make your life better so remember them!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">10</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Convenient, safe, and perfect gift</td>
+          <td class="text">My grandson inlaw loves his gift cards, so it's the perfect gift for Christmas</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">11</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Giftcard</td>
+          <td class="text">What can you say about a gift card? Well, it was valid. It's a good gift for someone who doesn't like to cook. Arrived promptly.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">12</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Simple giftcard!</td>
+          <td class="text">Easy way to gift money for birthdays.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">13</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great giftcard</td>
+          <td class="text">Great gift for online shoppers!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">14</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Easy..</td>
+          <td class="text">Reloading is easy. Shopping is easy. Amazon is easy.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">15</td>
+          <td>⭐</td>
+          <td class="title">One Star</td>
+          <td class="text">Card did not work!!!!</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag ok">N</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">16</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great Product.</td>
+          <td class="text">I bought this for a Christmas gift.The recipient really liked it.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">17</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">No note attached to sent gift card</td>
+          <td class="text">What a pretty gift card presentation , the recipient loved it ! I have one complaint , I took the time and wrote a short note to the recipient of the gift card so she knew who and why the GC was being sent but the note wasn’t attached. I’ve used the option to write a note on many occasions and several times it showed up without the note . I actually had to contact her to ask if she had checked her mail knowing it had arrived .</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">18</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift card</td>
+          <td class="text">Perfect! Arrived just when stated!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">19</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good</td>
+          <td class="text">Good gift card</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">20</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">21</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">22</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">23</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">24</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">25</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good product</td>
+          <td class="text">Good product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">26</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good product</td>
+          <td class="text">Good product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">27</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">28</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good Product</td>
+          <td class="text">Good Product</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">29</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good</td>
+          <td class="text">Good</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">30</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift card</td>
+          <td class="text">Perfect for Christmas</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">31</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">So easy</td>
+          <td class="text">Easy to do</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">32</td>
+          <td>⭐⭐</td>
+          <td class="title">Mistake</td>
+          <td class="text">Hit button by mistake n deduction from credit card on file</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag ok">N</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">33</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great gift idea</td>
+          <td class="text">Always great to order from my home. Amazon rocks!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">34</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Secure</td>
+          <td class="text">So easy to use and recipients get to choose how to use it.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">35</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Birthday surprise!</td>
+          <td class="text">This was a good birthday surprise!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">36</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Birthday Gift</td>
+          <td class="text">Have given as Holiday, Birthday & Other Occasions remembrances. Always appreciated by the person receiving.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">37</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Fun</td>
+          <td class="text">Awesome & they work</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">38</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Reload is super easy.</td>
+          <td class="text">Really ready to reload gift cards.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">39</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Convenience of giftabiliy.</td>
+          <td class="text">A great way to give a gift to family members in physical form. It was so convenient.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">40</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great Gift Package</td>
+          <td class="text">Nice gift packaging for any event</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">41</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Grest Sandwitches !!</td>
+          <td class="text">Perfect and I even used Amazon Points - was mailed right out.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">42</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">GOOD PIZZA !!</td>
+          <td class="text">Perfect and I even used Amazon Points - was mailed right out.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">43</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">We like this Store and they stock Tons of different Items for all kinds of Pets</td>
+          <td class="text">Our cats love this place.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">44</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Money was loaded on card</td>
+          <td class="text">Was cute and the money was loaded when it arrived</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">45</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">👍</td>
+          <td class="text">👍</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">46</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Love it!!</td>
+          <td class="text">This is an online gift card nothing to show sorry🤪</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">47</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">Gift cards are always a hit.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">48</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">So cool you can get a free tin with the gift ...</td>
+          <td class="text">So cool you can get a free tin with the gift card and it comes in 24 hours!! Super awesome. Last year I just printed off the gift cards which looked kind of cheap even though the cards were for substantial amounts. Highly recommend.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">49</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Reccomend</td>
+          <td class="text">Really easy to load</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">50</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Little sister surprise</td>
+          <td class="text">Same gift as her big sister's, this little one can choose the exact thing she most desires and run to the door for three days in anticipation.  A combined birthday and Christmas present for one who knows her own mind.  Good choice!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">51</td>
+          <td>⭐</td>
+          <td class="title">The added value was great, but no more</td>
+          <td class="text">Purchasing an Amazon gift card came with an added monetary value but no more.<br /><br />A Bronx cheer for you!</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag ok">N</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">52</td>
+          <td>⭐⭐⭐⭐</td>
+          <td class="title">Perfect gift!</td>
+          <td class="text">This is near where I work and has a drive through.  Nothing better during these times to give than a gift of good food they can pick up with minimal contact. Gift cards are the way to go these days!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">53</td>
+          <td>⭐⭐⭐⭐</td>
+          <td class="title">Great staff appreciation gift!</td>
+          <td class="text">What better gift during these times than one to treat yourself.  This is a great gift I gave out to my staff and even those who don't read liked the idea of being able to listen to the audiobooks as well as there being content and other media through Audible.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">54</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Cute cute cute!</td>
+          <td class="text">I love the tin! The gift cards can be ordered on different amounts.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">55</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">Simple and easy.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">56</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">As described.</td>
+          <td class="text">Being able to reload the gift card is a time saver.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">57</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Perfect gift for any occasion. Let them pick out what they love!</td>
+          <td class="text">I mean really, who wouldn't LOVE this?!?  Wonderful gift for any occasion.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">58</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">12 year old daughter loved this gift!</td>
+          <td class="text">Perfect gift for your kids!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">59</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Easy to send to an Amazon shopper</td>
+          <td class="text">This is a simple gift to friends or family. For me it was easy to setup. Took ok only about 30 seconds. I also redeem Visa gifts by giving the gift card to myself. I like there isnt a fee. I do want Amazon to make some cooler cards with my animation when a receiver gets it.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">60</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Rec'd promo from Amazon when reloading gift card.</td>
+          <td class="text">Bonus, rec'd a promo from Amazon for reloading gift card.  Yeah.<br /><br />Gift card was posted to my account quickly.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">61</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Saves a Little Over time.</td>
+          <td class="text">Nice way to save a few bucks overtime by reloading your own gift card.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">62</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">What a great company</td>
+          <td class="text">Who wouldn't want an Amazon gift card?  The box foretold the contents, lol.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">63</td>
+          <td>⭐</td>
+          <td class="title">A problem to use at drive thru's</td>
+          <td class="text">I only used the $50 card one time at Burger King. It was difficult to use. Must be run as credit, not as gift card. No remaining balance is given at the end of the transaction. And although it's on me, I misplaced or lost this card after only spending about $6 of it. I was hoping that the seller could provide me with the full card number so that I could at least use it online for other purchases. They failed to respond. I have the receipt from BK, but it only shows the last 4 numbers. There isn't a way of contacting happy cards customer service online that I could figure out. I wish I'd just stuck with credit cards. A lot safer.</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag ok">N</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">64</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">A gift card does make a great gift for a tweenager.</td>
+          <td class="text">We all know the kid who wants nothing. Or actually wants everything but nothing is good enough. YES,YES,the secret weapon. A AMAZON GIFT CARD!!  You pulled it off. You showed your love and you are the best and greatest. Happy Birthday to just because,You are the BEST!!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">65</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Nice to have</td>
+          <td class="text">This comes in  very handy, and makes the guilt less</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">66</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Excellent Gift</td>
+          <td class="text">Who would not like an Amazon Gift Card?  Makes everyone I give them, happy!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">67</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Yay so easy!</td>
+          <td class="text">So easy! No scraping!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">68</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">:)</td>
+          <td class="text">easy to use</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">69</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">10/10</td>
+          <td class="text">works great</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">70</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Perfect for a birthday 🎂</td>
+          <td class="text">Another nice gift box from Amazon. With the world the way it is now I had to send a gift rather than going to a party. And Amazon has a good selection of gift boxes and fast shipping so my nephew was happy when he received the card in the mail.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">71</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Perfect!</td>
+          <td class="text">Bought this for a gift and was very happy it shipped quickly and they received it just in time! Amazon is awesome! 🤩</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">72</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift box nice!</td>
+          <td class="text">Love the gift box. So much j NB icee than just handing a gift card to the grandkids.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">73</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">It was soooo easy</td>
+          <td class="text">It was a nice way to give a present</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">74</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">great</td>
+          <td class="text">great buy</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">75</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Amazon Thinks of Everything!</td>
+          <td class="text">GREAT idea!  I was so happy to have these on hand for the Holidays!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">76</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Amazon lover giftee?  Buy it!</td>
+          <td class="text">So gift card for certain sum.  No service fee.  Lively metal gift box - yes..... I said metal.  What is not to love about this???!<br /><br />Well done Amazon.  Well done.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">77</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Timing</td>
+          <td class="text">Great timing.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">78</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Was easy to do</td>
+          <td class="text">Easy to use</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">79</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">PENGUINS</td>
+          <td class="text">So so cute!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">80</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Believe this is the best gift to give !</td>
+          <td class="text">The recipient can choose what they want so the giver has less chance of a mistake.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">81</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">convenient</td>
+          <td class="text">A great and convenient gift idea-price is right too!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">82</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">The gift card came in a pretty box.<br />Thanks Amozan.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">83</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Best gift for someone you don’t know what to get</td>
+          <td class="text">This was for a gift</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">84</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great value</td>
+          <td class="text">Made my shopping much better good value</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">85</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Sweet gift!</td>
+          <td class="text">I sent this to my brother and he couldn't stop talking about it. This boxes puts a little more nice into a gift. Very pretty!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">86</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Amazing</td>
+          <td class="text">It can be used for a variety of things.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">87</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great Holder</td>
+          <td class="text">Great holder for gift cards</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">88</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift card</td>
+          <td class="text">Makes these so easy for any holiday and especially stops buying something people do not like</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">89</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Starbuck gift card</td>
+          <td class="text">My friend like the gift card like the sweater for holiday card</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">90</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good litte thank-you gifts</td>
+          <td class="text">I'm happy they did not cost me more than their face value to buy. I gave them out as a nice thank you to those who helped me with small things around my house. I sent them in the mail as a surprise, knowing money or gifts was not necessary. I recommend them.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">91</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Okay as a gift</td>
+          <td class="text">After I bought several I realized I could have sent "gift" money via text without the fees or wait.</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag ok">N</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">92</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Good gift</td>
+          <td class="text">Those who already have everything, they can buy an audible book, an old rerun of a favorite movie, some little thing they may want, or whatever as a gift for any occasion. I recommend.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">93</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">So convenient.</td>
+          <td class="text">Arrived on time, in perfect shape, and best of all the person receiving the gift can buy whatever they want. One size fits all!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">94</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Just what was ordered.</td>
+          <td class="text">Made holiday shopping easy!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">95</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Can Do It From Home</td>
+          <td class="text">Usually I either receive an Amazon gift card as a birthday and/or Christmas gift or I purchase them at a store. Then it's very easy to add the amount to my gift card balance using my cell phone. Well I was stuck inside for several days due to a blizzard and I bought quite a few books then due to a travel ban I could not go to the store to purchase a gift card.<br />So after checking my Gift Card Balance I saw that I had overindulged and it needed to be topped up. One of the options under Manage Your Balance was to Reload Your Balance. I had never used this option but decided to try it. It was so easy to do and I didn't have to leave the comfort of my home. I will be using it again in the future.</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">96</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Love it!</td>
+          <td class="text">Love my card!!</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">97</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Easy to use</td>
+          <td class="text">It’s easy to use and very convenient. I would definitely consider refill more in the future</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">98</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Easy to use</td>
+          <td class="text">Very easy to use. I wish I knew about it earlier</td>
+          <td><span class="tag truth">N</span></td>
+          <td><span class="tag bad">P</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+        </tr>
+        <tr class="">
+          <td class="idx">99</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Perfect gift sent I a lovely container</td>
+          <td class="text">Sent in a lovely container</td>
+          <td><span class="tag truth">P</span></td>
+          <td><span class="tag ok">P</span></td>
+          <td><span class="tag hit">match</span></td>
+        </tr></tbody>
+        </table>
+      </div>
+    </div>
+    
+</div>
+
+<script>
+(function(){
+  const filter = document.getElementById('filter');
+  const tbody = document.getElementById('tbody');
+  const count = document.getElementById('count');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const isMatch = tr => !tr.classList.contains('row-wrong');
+  function apply(){
+    const mode = filter.value;
+    const show = rows.filter(tr => mode==='all'
+      ? true : (mode==='match' ? isMatch(tr) : !isMatch(tr)));
+    show.forEach(tr => tr.style.display='');
+    rows.forEach(tr => { if(!show.includes(tr)) tr.style.display='none'; });
+    count.textContent = show.length + ' / ' + rows.length + ' reviews';
+  }
+  apply();
+  filter.addEventListener('change', apply);
+  filter.addEventListener('input', apply); // fires on arrow-key selection too
+})();
+</script>
+</body>
+</html>

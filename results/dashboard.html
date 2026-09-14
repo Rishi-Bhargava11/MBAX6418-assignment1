@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentiment Results · MBAX 6418</title>
+<style>
+:root {
+  --bg:#fbfaf7; --surface:#fff; --ink:#1c1b18; --muted:#7a7468; --border:#e7e2d7;
+  --accent:#2563eb; --accent-ink:#fff; --pos:#0f9d58; --neg:#d93025; --warn:#f4b400;
+  --radius:14px; --shadow:0 1px 3px rgba(28,27,24,.06),0 8px 24px rgba(28,27,24,.06);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1220px;margin:0 auto;padding:40px 24px 80px}
+header.hero{margin-bottom:28px}
+header.hero .eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:12px;color:var(--accent);font-weight:600}
+header.hero h1{font-size:30px;margin:8px 0 6px;letter-spacing:-.02em}
+header.hero p{color:var(--muted);margin:0;max-width:66ch}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+.kpi .kpi-value{font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.kpi .kpi-label{color:var(--muted);font-size:13px;margin-top:8px}
+.kpi.accent{background:var(--accent);color:var(--accent-ink);border:none}
+.kpi.accent .kpi-label{color:rgba(255,255,255,.8)}
+.kpi.kpi-bad .kpi-value{color:var(--neg)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+.card h3{margin:0 0 4px;font-size:16px}
+.card p.sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+table.cm{width:100%;border-collapse:collapse}
+table.cm th,table.cm td{padding:10px;text-align:center;font-size:13px}
+table.cm th{color:var(--muted);font-weight:500}
+.cm-cell{border-radius:10px;padding:12px;color:var(--ink)}
+.cm-cell b{font-size:22px;display:block}
+.cm-cell span{font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.cm-cell.hit{background:color-mix(in srgb,var(--pos) 14%,transparent)}
+.cm-cell.miss{background:color-mix(in srgb,var(--neg) 12%,transparent)}
+.bar-row{display:grid;grid-template-columns:150px 1fr 130px;gap:12px;align-items:center;margin-bottom:12px}
+.bar-label{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{background:#f0ede4;border-radius:999px;height:16px;overflow:hidden}
+.bar-fill{height:100%;border-radius:999px}
+.bar-fill.truth{background:var(--pos)}
+.bar-fill.pred{background:var(--warn)}
+.bar-fill.classy{background:var(--accent)}
+.bar-fill.star{background:var(--warn)}
+.bar-fill.star.s1{background:#d93025}.bar-fill.star.s2{background:#e67c2f}
+.bar-fill.star.s3{background:#f4b400}.bar-fill.star.s4{background:#7da04a}
+.bar-fill.star.s5{background:#0f9d58}
+.bar-val{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.dist-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.dist h4{margin:0 0 12px;font-size:14px;color:var(--muted);font-weight:600}
+.bar-label.emo{font-weight:500}
+.table-card{padding:0;overflow:hidden}
+.table-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.table-head h3{margin:0}
+.controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.controls label{font-size:13px;color:var(--muted)}
+.controls select{font:inherit;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink)}
+.count{font-size:13px;font-weight:600;background:#f0ede4;padding:4px 10px;border-radius:999px}
+.tbl-scroll{max-height:560px;overflow:auto}
+table.rev{width:100%;border-collapse:collapse;font-size:13px}
+table.rev th{position:sticky;top:0;background:var(--surface);text-align:left;padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border-bottom:1px solid var(--border);z-index:1}
+table.rev td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+table.rev .idx{color:var(--muted)}
+table.rev .title{font-weight:600;max-width:190px}
+table.rev .text{color:var(--ink);max-width:400px;line-height:1.45}
+table.rev .emo{color:var(--muted);font-size:12px}
+.row-wrong{background:color-mix(in srgb,var(--neg) 5%,transparent)}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.truth{background:#f0ede4;color:var(--muted)}
+.tag.ok{color:var(--pos)}.tag.bad{color:var(--neg)}
+.tag.hit{background:color-mix(in srgb,var(--pos) 14%,transparent);color:var(--pos)}
+.tag.miss{background:color-mix(in srgb,var(--neg) 13%,transparent);color:var(--neg)}
+@media (max-width:900px){
+ .grid,.dist-grid{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}
+ .bar-row{grid-template-columns:90px 1fr 100px}
+}
+</style></head><body><div class="wrap">
+<header class="hero">
+  <div class="eyebrow">MBAX 6418 · Assignment 1 · balanced run</div>
+  <h1>Sentiment &amp; emotion classification results</h1>
+  <p>Classifier on the Amazon Reviews '23 Gift Cards category via the course OpenAI-compatible endpoint,
+  scored against the star rating (150 reviews, 3 classes). The model never saw ratings.</p>
+</header>
+
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-value">150</div><div class="kpi-label">Reviews scored</div></div>
+      <div class="kpi accent"><div class="kpi-value">71.3%</div><div class="kpi-label">Overall accuracy</div></div>
+      <div class="kpi"><div class="kpi-value">107</div><div class="kpi-label">Correct</div></div>
+      <div class="kpi kpi-bad"><div class="kpi-value">43</div><div class="kpi-label">Mismatched</div></div>
+    </div>
+
+<div class="grid">
+  
+    <div class="card">
+      <h3>Star-rating distribution</h3>
+      <p class="sub">How reviews in this set spread across 1–5 stars.</p>
+      
+        <div class="bar-row">
+          <span class="bar-label">★</span>
+          <div class="bar-track"><div class="bar-fill star s1" style="width:88.0%"></div></div>
+          <span class="bar-val">44</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">★★</span>
+          <div class="bar-track"><div class="bar-fill star s2" style="width:12.0%"></div></div>
+          <span class="bar-val">6</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">★★★</span>
+          <div class="bar-track"><div class="bar-fill star s3" style="width:100.0%"></div></div>
+          <span class="bar-val">50</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">★★★★</span>
+          <div class="bar-track"><div class="bar-fill star s4" style="width:6.0%"></div></div>
+          <span class="bar-val">3</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">★★★★★</span>
+          <div class="bar-track"><div class="bar-fill star s5" style="width:94.0%"></div></div>
+          <span class="bar-val">47</span>
+        </div>
+    </div>
+  
+    <div class="card">
+      <h3>Confusion matrix</h3>
+      <p class="sub">Truth rows vs predicted columns. Off-diagonal cells show how errors move.</p>
+      <table class="cm"><thead><tr><th></th><th>→ POSI</th><th>→ NEUT</th><th>→ NEGA</th></tr></thead><tbody><tr><th>POSITIVE (truth)</th><td><div class="cm-cell hit"><b>49</b><span>match</span></div></td><td><div class="cm-cell miss"><b>1</b><span>mis</span></div></td><td><div class="cm-cell miss"><b>0</b><span>mis</span></div></td></tr><tr><th>NEUTRAL (truth)</th><td><div class="cm-cell miss"><b>9</b><span>mis</span></div></td><td><div class="cm-cell hit"><b>10</b><span>match</span></div></td><td><div class="cm-cell miss"><b>31</b><span>mis</span></div></td></tr><tr><th>NEGATIVE (truth)</th><td><div class="cm-cell miss"><b>2</b><span>mis</span></div></td><td><div class="cm-cell miss"><b>0</b><span>mis</span></div></td><td><div class="cm-cell hit"><b>48</b><span>match</span></div></td></tr></tbody></table>
+    </div>
+</div>
+<div class="grid">
+  
+    <div class="card">
+      <h3>Per-class accuracy</h3>
+      <p class="sub">How often the model is right on each class.</p>
+      
+        <div class="bar-row">
+          <span class="bar-label">POSITIVE</span>
+          <div class="bar-track"><div class="bar-fill classy" style="width:98.0%"></div></div>
+          <span class="bar-val">49/50 · 98%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">NEUTRAL</span>
+          <div class="bar-track"><div class="bar-fill classy" style="width:20.0%"></div></div>
+          <span class="bar-val">10/50 · 20%</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label">NEGATIVE</span>
+          <div class="bar-track"><div class="bar-fill classy" style="width:96.0%"></div></div>
+          <span class="bar-val">48/50 · 96%</span>
+        </div>
+    </div>
+  
+    <div class="card">
+      <h3>Class distribution</h3>
+      <p class="sub">Truth vs predicted side by side.</p>
+      <div class="dist-grid"><div class="dist"><h4>Truth (from stars)</h4>
+            <div class="bar-row">
+              <span class="bar-label">POSITIVE</span>
+              <div class="bar-track"><div class="bar-fill truth" style="width:63.3%"></div></div>
+              <span class="bar-val">50</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">NEUTRAL</span>
+              <div class="bar-track"><div class="bar-fill truth" style="width:63.3%"></div></div>
+              <span class="bar-val">50</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">NEGATIVE</span>
+              <div class="bar-track"><div class="bar-fill truth" style="width:63.3%"></div></div>
+              <span class="bar-val">50</span>
+            </div></div><div class="dist"><h4>Predicted</h4>
+            <div class="bar-row">
+              <span class="bar-label">POSITIVE</span>
+              <div class="bar-track"><div class="bar-fill pred" style="width:75.9%"></div></div>
+              <span class="bar-val">60</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">NEUTRAL</span>
+              <div class="bar-track"><div class="bar-fill pred" style="width:13.9%"></div></div>
+              <span class="bar-val">11</span>
+            </div>
+            <div class="bar-row">
+              <span class="bar-label">NEGATIVE</span>
+              <div class="bar-track"><div class="bar-fill pred" style="width:100.0%"></div></div>
+              <span class="bar-val">79</span>
+            </div></div></div>
+    </div>
+</div>
+
+
+    <div class="card">
+      <h3>Primary emotion — LLM vs word list</h3>
+      <p class="sub">Agreement: 7/44 reviews (16%) where both methods had an answer.
+      Dots show predicted emotion; bars are LLM counts; NRC counts in the label.</p>
+      
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#d93025">● anger</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:100.0%;background:#d93025;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 64 · NRC 1</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#8e6b12">● anticipation</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:4.7%;background:#8e6b12;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 3 · NRC 17</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#6a0dad">● disgust</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:0.0%;background:#6a0dad;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 0 · NRC 1</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#7a4b94">● fear</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:1.6%;background:#7a4b94;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 1 · NRC 1</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#0f9d58">● joy</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:73.4%;background:#0f9d58;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 47 · NRC 9</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#1a56db">● sadness</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:26.6%;background:#1a56db;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 17 · NRC 2</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#f08600">● surprise</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:1.6%;background:#f08600;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 1 · NRC 1</span>
+        </div>
+        <div class="bar-row">
+          <span class="bar-label emo" style="color:#2563eb">● trust</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:26.6%;background:#2563eb;opacity:.9"></div>
+          </div>
+          <span class="bar-val">LLM 17 · NRC 12</span>
+        </div>
+    </div>
+
+
+    <div class="card table-card">
+      <div class="table-head">
+        <h3>Review detail</h3>
+        <div class="controls">
+          <label>Class
+            <select id="fclass">
+              <option value="all">All</option>
+              <option value="POSITIVE">POSITIVE</option><option value="NEUTRAL">NEUTRAL</option><option value="NEGATIVE">NEGATIVE</option>
+            </select>
+          </label>
+          <label>Verdict
+            <select id="fverdict">
+              <option value="all">All</option>
+              <option value="match">Matches</option>
+              <option value="mismatch">Mismatches</option>
+            </select>
+          </label>
+          <span class="count" id="count"></span>
+        </div>
+      </div>
+      <div class="tbl-scroll">
+        <table class="rev">
+          <thead><tr><th>#</th><th>Rating</th><th>Title</th><th>Text</th><th>Truth</th><th>Model</th><th>Verdict</th><th>Emotion (LLM)</th><th>Emotion (NRC)</th></tr></thead>
+          <tbody id="tbody">
+        <tr class="">
+          <td class="idx">0</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great gift card for friends in holiday season</td>
+          <td class="text">Great design of gift card for friends to eat some chipotle food in holiday season. Easy to use.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">1</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">I gave these as christmas gifts to my nieces and ...</td>
+          <td class="text">I gave these as christmas gifts to my nieces and nephews. They appreciated the gift and credit card of their own feel. Unfortunately Auntie was expected to take them to the movies and provide a meal with this gift.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">2</td>
+          <td>⭐</td>
+          <td class="title">Do not buy</td>
+          <td class="text">This is a scam - can't be used for Spotify, it's a joke</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">3</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Need be more Attractive!!!</td>
+          <td class="text">Can be a little more attractive for kids.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">4</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Gift card</td>
+          <td class="text">Easy to use and reload</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">5</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Amazing</td>
+          <td class="text">He loved it!</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">6</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">As expected</td>
+          <td class="text">As expected</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">7</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Good value</td>
+          <td class="text">Good value</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">8</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Excellent</td>
+          <td class="text">Loved it</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">9</td>
+          <td>⭐⭐</td>
+          <td class="title">These are handy for tough to buy for folks.  Not very personal, but it does allow them to make their own purchases.</td>
+          <td class="text">These are handy for tough to buy for folks.  Not very personal, but it does allow them to make their own purchases.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">10</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Cute Box</td>
+          <td class="text">Who doesn't love an amazon card</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">11</td>
+          <td>⭐</td>
+          <td class="title">Don’t expect this card to function like a typical Visa</td>
+          <td class="text">Don’t buy this card. This card doesn’t work with Apple Wallet (cannot get added). It doesn’t work at gas station either. I ended up adding it back to my Amazon account.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="">
+          <td class="idx">12</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Ok</td>
+          <td class="text">Ok</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">13</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great for spending. Not great for sinking in jello</td>
+          <td class="text">I put this gift card in jello for my sisters-in-laws birthday... the tin floats. Man did i not see that coming. If you buy this to put it in jello, maybe get some rocks for the inside. Otherwise it will float. Clearly a stapler is easier to use. The card spends great tho! Highly recommend if you don’t need to put in jello... also still recommend if you do need to put it in jello.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">14</td>
+          <td>⭐</td>
+          <td class="title">Love the iTunes but no good 😢</td>
+          <td class="text">The numbers & letters is wrong I want a new<br />$200.00 card. Because the one I have look like someone had used it. I scratch it off but someone<br />knew the numbers, letters I was the one scratch it off</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">15</td>
+          <td>⭐</td>
+          <td class="title">False advertising</td>
+          <td class="text">Ripp off. The offer was  $50.00 for $40.00 and the charged the $50.00. Dont fall for it. The cards did arrive timely but not at the price avertized.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">16</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Always a hit</td>
+          <td class="text">Great gift</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">17</td>
+          <td>⭐</td>
+          <td class="title">damaged</td>
+          <td class="text">Bought this as a gift for my grandson's birthday.  The gift card looks OK, but the Happy Birthday gift card holder was ripped and looks awful.  I'll have to tape it together, which will make for a lousy presentation.  Disappointing.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">18</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">Great gift</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">19</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">For those sewers in your life.</td>
+          <td class="text">Great gift card for those crafty people on your list.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">20</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift card</td>
+          <td class="text">Excellent seller and product</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">21</td>
+          <td>⭐</td>
+          <td class="title">Auto-Renewal caused a big problem</td>
+          <td class="text">Even though the price was great, I can't recommend purchasing Office 365 through Amazon.  Cancelling the auto-renewal was easy but in the eyes of MS, my office account was locked to Amazon.  Took lengthy phone calls with MS support over several weeks to resolve.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="">
+          <td class="idx">22</td>
+          <td>⭐</td>
+          <td class="title">Not a Bear.  Tradition Ruined</td>
+          <td class="text">I've been getting the Amazon Gund bear every year.  This year the bear was replaced by socks.  Very sad end to a great tradition from the Amazon promotion team..</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">23</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Almost threw it in the trash! Needs better labeling on outside envelope.</td>
+          <td class="text">I love Amazon and shop continuously on it.  I bought a gift card for my mom for Xmas and the tracking info actually said I would get it one day earlier than the other products I ordered at the same time.  So when a non descript sealed envelope came in a box with something else I tossed it on the counter thinking it was junk mail like so many other companies send with their products.  I actually forgot about the GC as I expected it to come snail mail solo.  So this envelope sat for a few days and as I was tossing it into the recycle bin I decided to tear it open.  What to my surprise was inside but another envelope, the holiday card and gift card.  Wow was I surprised.  Since the outside envelope is just packaging it should be better labeled as to the contents.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">surprise</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">24</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Works</td>
+          <td class="text">What else can I say? It works!</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">25</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">just what i asked for</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">26</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Great gift to me</td>
+          <td class="text">The design is cool. Overall GOOD.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">27</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Cute</td>
+          <td class="text">Really cute for a birthday present.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">28</td>
+          <td>⭐</td>
+          <td class="title">One Star</td>
+          <td class="text">works fine</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">29</td>
+          <td>⭐⭐⭐⭐</td>
+          <td class="title">Ease of  use.</td>
+          <td class="text">It is so easy load. No problems at all.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">30</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">Perfect gift for anyone.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">31</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">works but could be simpler</td>
+          <td class="text">works but could be simpler to use</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">32</td>
+          <td>⭐</td>
+          <td class="title">Don’t travel with Amazon credits.</td>
+          <td class="text">I tried to add some funds to purchase a movie and it let me add the funds but not use them to purchase the movies because I was out of the country when attempting this.  So I’ll go back to using Netflix which works wherever I go.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="">
+          <td class="idx">33</td>
+          <td>⭐</td>
+          <td class="title">To give a Christmas gift card in June someone screwed up. I asked for a different card front</td>
+          <td class="text">Wrong card.  I’ll keep this for Christmas</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">34</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">an easy way to add money to my account</td>
+          <td class="text">a thumbs up</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="">
+          <td class="idx">35</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Easy gift giving</td>
+          <td class="text">Nice</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">36</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Filling a leaky bucket</td>
+          <td class="text">The process is easy, which is good because Kindle raids that balance first.  When you go back later to use the balance, it's reduced or gone.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">37</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Awesome</td>
+          <td class="text">Great deal</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">38</td>
+          <td>⭐</td>
+          <td class="title">Never received $5. bonus promised when purchased.</td>
+          <td class="text">Hi,  First, I never received the $5. bonus that I was supposed to get in November.  Second, I purchased these as Christmas gifts and because of all the reviews from people who had problems cashing the cards in, I was afraid to give them to anyone else.  I ended up applying all 3 cards to my own Amazon account.  Thank goodness they all worked but I couldn't use them as gifts.  Third, the area on the back that you are supposed to &#34;scratch&#34; off was very difficult to remove and on one card, one of the letters beneath it was almost removed as well.  I had to try a couple of times before I got the right letter & the card finally was approved.  I would not take a chance on an &#34;offer&#34; like this from Amazon again.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">39</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great gift box</td>
+          <td class="text">Loved the free gift box</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">40</td>
+          <td>⭐</td>
+          <td class="title">Box was crushed.</td>
+          <td class="text">The box was in terrible shape. I could not use it with the gift card.🙁</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">41</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Details unclear</td>
+          <td class="text">An attractive offer but i did not understand that the bonus would only apply to an order shipped directly from Amazon</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">42</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">ill try most things, once</td>
+          <td class="text">glad to get a ten dollar reward to try it out.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">43</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">misleading</td>
+          <td class="text">Figured out that this whole mess was because there were more than a card in some of the boxes (one worked, the other not).</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">disgust</td>
+        </tr>
+        <tr class="">
+          <td class="idx">44</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">It's not the product, it's how the package was handled/delivered</td>
+          <td class="text">The gift cards are great. The only reason for the 3star review is how I got my package.... All of the tin Santa cases for the gift cards are all dented... The package I received had over 9 delivery stickers on it and was delayed for more than 6 days. There was no weather problems during those days....</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">45</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">There was zero balance on card! It was supose to be $25.000 gift card!</td>
+          <td class="text">There was zero balance on gift card! It should have been $25.00. She went to use it and there was supose to be a  card with it and no card to say who was from! This needs to be corrected. .</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">46</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Fast and easy.</td>
+          <td class="text">A last minute gift for Christmas.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">47</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Pretty but too thin</td>
+          <td class="text">It is too thin as I thought</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">48</td>
+          <td>⭐⭐⭐⭐</td>
+          <td class="title">Four Stars</td>
+          <td class="text">I liked the design.  It was easy to obtain and didn't need additional gift wrapping.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">49</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Convenient</td>
+          <td class="text">The presentation tin was very nice.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">50</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Pretty</td>
+          <td class="text">Basic gift card</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag bad">NEUTRAL</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">51</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Three Stars</td>
+          <td class="text">1</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anticipation</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">52</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Thank</td>
+          <td class="text">Thank</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">53</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Perfect Gift</td>
+          <td class="text">Perfect gift for someone who has most everything.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">54</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Just a gift card</td>
+          <td class="text">Just a gift card</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anticipation</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">55</td>
+          <td>⭐⭐</td>
+          <td class="title">It was supposed to be for mother's day and I received one that looked more like it was intended for a birthday</td>
+          <td class="text">I received the wrong card. It was supposed to be for mother's day and I received one that looked more like it was intended for a birthday, with balloons and such on it.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">56</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Arrived in 2 days 👍</td>
+          <td class="text">Quick delivery and great gift for friend traveling</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">57</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Service</td>
+          <td class="text">My card was all damaged and the outside envelope came later then said</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">58</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">good stuff</td>
+          <td class="text">loved the packaging. Makes giving a gift card much better.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">59</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">its gift card</td>
+          <td class="text">its a gift card, not even sure why Amazon wants me to review it. It was a pain as I had credit card gift card I wanted to use and pay the remainder on my debit card, Amazon said "no". So I had to buy this gift card with the other gift card so I could buy my gift and pay the difference on my own card, what a pain.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">60</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift cards are neat</td>
+          <td class="text">They're gift cards. Woohoo you payed to put money on a card. I know I did it. It was for good reason though.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">61</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Hassle free Christmas</td>
+          <td class="text">I’m happy with my purchase. It made giving Christmas gifts so much easier to just buy this gift card online and get it delivered to my family member. This made my life so much easier and I’m glad I didn’t have to go out into traffic to get it.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">62</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Three Stars</td>
+          <td class="text">Cute little Xmas case</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">63</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Beware of packaging</td>
+          <td class="text">I purchased a $50 gift card and had it sent to a relative. All of the online documentation indicated the recipient would not know what was in the package.  There was a box during the order process for a To: and From: and I also added "Do Not Open Until Christmas". The package arrived on the specified day but the label on the outside of the box did not have any indication of my note.  The recipient opened the box to find a sealed Amazon envelope and a packing slip.  The sealed envelope contained the gift card.  I figured the note should be here; nope.  I finally found the note on the packing slip.  OK, that's fine, but the packing slip also had the description of what was inside the sealed envelope including the denomination of the gift card; so much for a surprise.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">surprise</td>
+        </tr>
+        <tr class="">
+          <td class="idx">64</td>
+          <td>⭐</td>
+          <td class="title">There's truly little reason to buy a Fandango gift card ...</td>
+          <td class="text">There's truly little reason to buy a Fandango gift card.  About 20% of it goes to &#34;Convenience Fees&#34;.  Just buy a gift card to the theater directly.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">65</td>
+          <td>⭐</td>
+          <td class="title">Gift card arrived water damaged</td>
+          <td class="text">Gift card arrived water damaged even though it was within plastic wrapping. Could not give it as a gift.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">66</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Hard to figure the value from outside.</td>
+          <td class="text">Hard to figure the value from outside.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anticipation</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">67</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift Cards how can you rate gift cards</td>
+          <td class="text">Gift Cards are gift cards...can't go wrong there.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">68</td>
+          <td>⭐</td>
+          <td class="title">Mystery Gift</td>
+          <td class="text">My daughter was gifted a card and has no way to determine value without redeeming!</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">69</td>
+          <td>⭐</td>
+          <td class="title">Overcharged</td>
+          <td class="text">I purchased a Brother Compact Monochrome Laser Printer, HL-L2370DWXL, which included a promotional offer, "Buy any Brother XL Printer, and receive a $20 gift card... Gift Card must be added to Shopping Cart, and offer will be reflected at Checkout." I should not have been charged for this card. Very unhappy.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">70</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Gift message was not left with package, my brother had no idea who it was from, very disappointing.</td>
+          <td class="text">Should have given the gift message with the gift card so my brother knew who it was from.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">71</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Attractive box and good gift for friends</td>
+          <td class="text">It's always a good gift to thank friends. No other item is better than an Amazon gift card I believe. The gift box is attractive and good appearance.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">72</td>
+          <td>⭐</td>
+          <td class="title">Delivery</td>
+          <td class="text">Missed promised date</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">73</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">OK Gift Card</td>
+          <td class="text">OK Gift Card but the package was damaged</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">74</td>
+          <td>⭐</td>
+          <td class="title">No value!</td>
+          <td class="text">Tried to purchase with the card. Said zero value.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">75</td>
+          <td>⭐</td>
+          <td class="title">DIFFICULT TO USE. BRING BACK THE OLD FORMAT!</td>
+          <td class="text">DIFFICULT TO USE. BRING BACK THE OLD FORMAT!</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">fear</td>
+        </tr>
+        <tr class="">
+          <td class="idx">76</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Reloading my balance</td>
+          <td class="text">Love this site,never have any problems reloading.  Thank you.  C</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">77</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">gift card</td>
+          <td class="text">It makes it quick and easy when I add money for my in app purchases</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">78</td>
+          <td>⭐</td>
+          <td class="title">was not activated</td>
+          <td class="text">I was trying to buy some thing and kept on saying that the card was invalid</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">sadness</td>
+        </tr>
+        <tr class="">
+          <td class="idx">79</td>
+          <td>⭐</td>
+          <td class="title">Came without being loaded</td>
+          <td class="text">I bought this as a gift for my mother on Christmas.  When she went to use it, it had no money on it.  I had bought others that worked fine, but this one did not.  Unfortunately it ruined a holiday  present for family.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">80</td>
+          <td>⭐</td>
+          <td class="title">Doesn't work</td>
+          <td class="text">It doesn't work</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">81</td>
+          <td>⭐⭐</td>
+          <td class="title">I'm glad I did not give this card away as a ...</td>
+          <td class="text">I'm glad I did not give this card away as a gift because I would be embarrassed to find out that it did not work for the recipient when it was supposed to. I've called the phone number on the back of the card and it is activated and contains the appropriate balance. The card, however, did not read and was neither &#34;accepted or declined&#34;, as the manager was telling me this.<br /><br />I've gone to the company that operates the card and it referenced that any redemption issues should notify the retailer that issued the card. So now I wait to find out how I can use my card with a balance but cannot be read and processed.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">82</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">great to use</td>
+          <td class="text">liked points</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">83</td>
+          <td>⭐</td>
+          <td class="title">Cards were empty. Waste of money.</td>
+          <td class="text">Unable to redeem these cards, they each had $0 dollars on them. Money down the drain.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">84</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Easy to load, was what I needed to complete a transaction</td>
+          <td class="text">I was reminded that I can reload this card to help complete a purchase that I was short of only 50 cents. It loads money in an instant, and I was able to complete the transaction to receive item the very next day. I would like to thank the rep who reminded me I can do this, because I was frustrated and would have simply cancelled my order.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">85</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">not unusually</td>
+          <td class="text">unlike nothing, it was not special , I brought these for my spouse, he said the food was better in NJ</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">86</td>
+          <td>⭐</td>
+          <td class="title">One Star</td>
+          <td class="text">Not very happy went to use this and it was not loaded with the $25 :(</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">87</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Having problems doing that</td>
+          <td class="text">Trying to cancel it</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">sadness</td>
+        </tr>
+        <tr class="">
+          <td class="idx">88</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great gift idea</td>
+          <td class="text">Came quickly, and they loved they could what they want</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">89</td>
+          <td>⭐</td>
+          <td class="title">Did not work</td>
+          <td class="text">I gave this to my friend As a gift it says there is money on the card but it will not work<br />It shut down a system at a store when they tried to use it. When you call it says money is on there but they can’t use it</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">90</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Good</td>
+          <td class="text">Ok</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">91</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Leave yourself time to match gifts to recipients!</td>
+          <td class="text">Gift card tin arrived with Santa bag on time. However, the recipient information was tossed in the package without any reference to the actual gifts. Luckily I knew which tag went with which gift, and the gift values weee the same. However, this was a problem for gifts sent directly to recipients. The only gifts which were properly marked were the gift-wrapped items, but even those arrived with extra recipient tags adding to confusion. We should not have to build-a-gift at these prices. Amazon, you can do much better than this!</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">92</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">No specific comments</td>
+          <td class="text">No specific comments</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">trust</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">93</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">Great</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">94</td>
+          <td>⭐</td>
+          <td class="title">Scam</td>
+          <td class="text">Do not buy.  If you search gift car this comes up.  Thought I was buying 500 gift card to give away, instead it put it on my account.  I dealt with amazon chat and was told they are unable to return it or take it back and that I would have to purchase another gift card.  So I went and got my actual gift card went to checkout.... cannot use gift card balance to buy a gift card.  Ridiculous amazon cannot undo this purchase</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">95</td>
+          <td>⭐</td>
+          <td class="title">This sux</td>
+          <td class="text">Bad</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">96</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">It wasn't like the one on this page</td>
+          <td class="text">I wasn't impressed with the tin. It wasn't like the one on this page. Get candy crush jelly saga.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">97</td>
+          <td>⭐⭐</td>
+          <td class="title">Refused at some restaurants</td>
+          <td class="text">I gave four of these as gifts for Christmas.  Some restaurants will not take them.  Doesn’t make for a very good gift if you’re limited on where you can use them.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">98</td>
+          <td>⭐</td>
+          <td class="title">Card was not activated</td>
+          <td class="text">The card was not activated and by the time the person I sent it tried to use it, the card was declined and Amazon has no option to return it. I called the number on the back of the Visa card and was directed back to Amazon. $105 wasted.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">99</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Wht such a high purchase fee?</td>
+          <td class="text">I think the service fee of $5.95 is too high.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anger</td>
+        </tr>
+        <tr class="">
+          <td class="idx">100</td>
+          <td>⭐</td>
+          <td class="title">Complete disregard to product quality.</td>
+          <td class="text">What a cutesy design on the product's page, right? I ordered this birthday one, and a graduation one. The graduation one was perfect; 5 stars, presentation, container, etc. This birthday one however, wasn't.<br /><br />They shipped it, WITHOUT THE OTHER CUPCAKE HALF.<br /><br />Someone shoved this half baked birthday card inside a brown envelope alongside a perfectly done one, and said "Yep, this is fine!"</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">101</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Disappointed in the bent tin.</td>
+          <td class="text">I received this and it was so bent up that the cupcake tin wouldn’t close.  I was disappointed because it was for a child’s birthday gift.  I’ve purchased many gift cards and this is the only time I was unhappy with my purchase.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">102</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Nice Packaging of the Gift Card</td>
+          <td class="text">Loved the box it came in!</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">103</td>
+          <td>⭐⭐</td>
+          <td class="title">how</td>
+          <td class="text">dont know  when to reload..never comes up how to use and reload..am i getting my moneys worth as i don't know..no feed back on this</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">104</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Convenient service but still some confusion?</td>
+          <td class="text">The reload itself went fine but I had some problems re activating the reloaded card as my payment option. I'm still not sure how I got it to work...</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">105</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great Service!!</td>
+          <td class="text">Received my card today in excellent condition and I know that I will have a very happy teenager come Christmas</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">106</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">Great investment. I need more</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">107</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Look and Wait</td>
+          <td class="text">difficult to find and no verification that I was successful in using online reload but overall OK</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag ok">NEUTRAL</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">108</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">ok but I was offered a $10. gift promo ...</td>
+          <td class="text">ok  but I was offered a $10. gift promo for ordering it but did not receive it... and I ordered another $50.card with same promo and got card and no promotion., so I gave it a 3</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">109</td>
+          <td>⭐</td>
+          <td class="title">One Star</td>
+          <td class="text">i couldnt pre-order mp3 album with it</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">110</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Loved it</td>
+          <td class="text">Loved the special graduation icons</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">111</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">$100 Amazon gift card</td>
+          <td class="text">Excellent!  Design was nice</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">112</td>
+          <td>⭐</td>
+          <td class="title">What headline?</td>
+          <td class="text">I thought I could use it for subscription or something. Couldn't. Currently I don't know what to do with it or how to use it...</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">113</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Loved how easy it is to use</td>
+          <td class="text">It was super easy to top up and super giftable</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">114</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Nice product but…</td>
+          <td class="text">Purchased these to add to teacher appreciation gifts. The gift card holders/envelopes are really nice and make for very nice presentation. However I ordered three and one came destroyed. There are no holes in the plastic but it is stretched like someone purposely ripped the envelope open. The claim sticker is not removed so I don’t believe the gift card has been compromised. But if someone ordered these they are likely for a gift so why would you send one that is destroyed.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">joy</td>
+        </tr>
+        <tr class="">
+          <td class="idx">115</td>
+          <td>⭐</td>
+          <td class="title">Amazon, really,  you can do better than this!!</td>
+          <td class="text">It is a rip off!  I should have read the reviews.  Amazon, really, you can do better than this.... my trust level for your company just went down.  This is the second time this month I have bought a non returnable item from Amazon.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">116</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Great idea for a grad...</td>
+          <td class="text">Ordered 2...one was fine the other damaged.  I am sure the recent grad wont care...just frustrating.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">117</td>
+          <td>⭐</td>
+          <td class="title">Connections Account not safe for gift cards</td>
+          <td class="text">We purchase gift cards every year from Cinemark and reload them throughout the year. We listened to the advertising and advice from Cinemark and added our giftcard to our connection account a little over a year ago. BIG MISTAKE! Cinemark does not have good protection from cyber hackers for their connection site. Thus our giftcard was hacked from the connections site and we lost $225.00 of our giftcard balance when that balance was stolen from their site and used over 800 miles a way to, I guess, have an expensive movie night out! I wish we had ignored Cinemark and their advertising as if we had just used the giftcard we purchased and taken it out of our wallet to pay and not linked the GC number to our account we would still have $225.01 that was haced.<br /><br />Cinemark also does not honor their guests. We have been treated rudely. Told musinformation, like that their loss prevention team would call yet that has never happened. Also asked to be able to speak to corporate about our situation only to have our requests fall on deaf ears. We filed a police report, but could not give completed information as we have been unable to speak with loss prevention about exactly what happened. How was our account hacked? Were other accounts hacked? So today we also filed a complaint against Cinemark USA Inc. For lack of customer service, failure to secure their site while protecting people's money and still advertising to people to add your GC to that unsafe site! Protect yourself. Buy your giftcard, keep it safe in your wallet and enjoy it from there. That way you keep what is yours! Don't let Cibemark lose what is yours! Trust me they won't do anything about it and they won't give the lost money back!</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">118</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Three Stars</td>
+          <td class="text">This tin came all dented.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">119</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">I really like these gift cards</td>
+          <td class="text">I really like these gift cards. They are a lot nicer than the gift cards you can buy in the stores.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">120</td>
+          <td>⭐</td>
+          <td class="title">A nightmare</td>
+          <td class="text">There is no simple way to get these v bucks onto a secondary account on ps4. Epic games and PlayStation are both no help in fixing the issue either</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">121</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Beautiful box for presentation.</td>
+          <td class="text">Kind of hard to open, would prefer it to open on the top.?</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="">
+          <td class="idx">122</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">excellent</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">123</td>
+          <td>⭐</td>
+          <td class="title">HORRIBLE GIFT CARD</td>
+          <td class="text">CUSTOMER SERVICE IS TERRIBLE</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">124</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Would have been nice if the "this is a gift" line was noticed ...</td>
+          <td class="text">This was a gift item and the person receiving said there was no information from where it came.  She had to send an embarrassing text to find out &#34;who sent the Amazon gift card&#34;.  Would have been nice if the &#34;this is a gift&#34; line was noticed with to and from.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">125</td>
+          <td>⭐</td>
+          <td class="title">One card was empty</td>
+          <td class="text">I have them as gifts but one card has nothing on it</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">126</td>
+          <td>⭐</td>
+          <td class="title">DON'T BUY, UNUSABLE</td>
+          <td class="text">Worthless, can't be used towards any type of special spotify account (Student, family etc.).<br /><br />Also couldn't be returned after I discovered this trap.<br /><br />Spotify are a bunch of blood sucking leeches who deserve more 1 star ratings for this. I'm literally canceling my own spotify premium and switching to Pandora just because of this putrid experience.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">127</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Limited use</td>
+          <td class="text">This gift card cannot be used at Starbucks in a Barnes and nobles store.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">128</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Why don’t you include the amount?!</td>
+          <td class="text">I read reviews that the total wouldn’t be on the cards. I was fine with it. Until I learned I’d have to scratch every gift card code on the back to figure out the totals. Now they look used and have to give them to my kids teachers. Ridiculous. I’d imagine these are pretty loaded In the warehouse waiting to go out? Put the amount on the plastic bag they come in. It’s really not that complicated.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">129</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Very nice.</td>
+          <td class="text">Arrived next day. Cool little tin. People really liked the packaging. Nice addition to the standard gift card. Definitely will buy again.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">130</td>
+          <td>⭐⭐</td>
+          <td class="title">Prepare to wait...</td>
+          <td class="text">They claim it will take 5 minutes... more like over an hour every time.. this is inconvenient  and almost funny because when the money goes directly through it should automatically  reflect on the balance... sorry amazon buy this process is broken..</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">131</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Santa Gift Card Box</td>
+          <td class="text">Great gift card presentation device.  However, the paint on edges of the lids was marred/chipped.  Ordered replacements still not perfect.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">sadness</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">132</td>
+          <td>⭐</td>
+          <td class="title">RIP OFF</td>
+          <td class="text">What a rip off had on watch list and hit add to cart right away and put on waiting list</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">133</td>
+          <td>⭐</td>
+          <td class="title">Envelopes were too small for the cards!</td>
+          <td class="text">The envelopes were too small for the cards</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">134</td>
+          <td>⭐</td>
+          <td class="title">Was not activated</td>
+          <td class="text">Was not activated.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">135</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Fun for birthdays</td>
+          <td class="text">Great birthday gift.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">136</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Great</td>
+          <td class="text">Great.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">137</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">How much is on the card?</td>
+          <td class="text">I ordered several gift cards at different amounts.  They all came in the same package and there's no way to tell which one is which.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">138</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Call the number on the back to register card DO NOT USE SITE</td>
+          <td class="text">2/3 worked fine trying to get Amazon to fix the last card because a google charge ended up there that wasn’t me. People are using fake sites to steal money so just call the number on the back of the card to avoid your money going missing and try to transfer it to a personal card if you can</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">fear</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">139</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Five Stars</td>
+          <td class="text">real benefits, thanks</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">140</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Confusing!!</td>
+          <td class="text">Very confusing!</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">141</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Gift card</td>
+          <td class="text">Awesome</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">142</td>
+          <td>⭐</td>
+          <td class="title">I recieved only 16.</td>
+          <td class="text">Orginal order was for 18 cards, I recievd only 16.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">143</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Could not use</td>
+          <td class="text">I don’t think it has anything on it</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">NEGATIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">trust</td>
+        </tr>
+        <tr class="row-wrong">
+          <td class="idx">144</td>
+          <td>⭐⭐⭐</td>
+          <td class="title">Oh boy!</td>
+          <td class="text">Good stuff.</td>
+          <td><span class="tag truth">NEUTRAL</span></td>
+          <td><span class="tag bad">POSITIVE</span></td>
+          <td><span class="tag miss">mismatch</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">145</td>
+          <td>⭐⭐⭐⭐</td>
+          <td class="title">Four Stars</td>
+          <td class="text">Granddaughter was very happy with it.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">146</td>
+          <td>⭐</td>
+          <td class="title">Horrible, horrible, horrible!! Do NOT order from this SHAM company!</td>
+          <td class="text">I don't know what kind of sweatshop these guys are running, but I've had problems with them since day ONE--I tried to give them ZERO STARS, but I HAD to give them at least one (which is being generous, in my opinion). I ordered my cards well in advance, and they still did not arrive on time. When I called the company to figure out what the issue was, they sent my phone call to somewhere in India--I was put on hold numerous times while they scrambled around trying to figure out what was going on with an order they had sent. When they finally had some information, they GUARANTEED a delivery date--the date passed with NO cards in the mail whatsoever. Apparently, this 'company' (and I use that term very loosely) takes 2+ weeks to process and send out FAULTY orders.<br /><br />When the individual DID receive the card it looked as though it had been used, and did not even WORK. When I explained to 'GiftCard Mall' what had happened, and told them that my mother said it looked like the card was in rough condition (the individual at the store the card was purchased for, in fact, confirmed the card HAD been reloaded--she had guessed it was multiple times from the shape the card was in), they implied that she was lying about it! The manager I spoke with on the phone was constantly interrupting me and trying to speak over me while I was trying to explain myself--trying to convince me that the United States Postal Service doesn't have tracking numbers. I told the manager that I was guaranteed a delivery date when I called previously, at the very least I expect a company to stick by the guarantees THEY offer, but apparently this company does NOT stick by their promises. The records they had of my previous conversation was entirely lacking, and instead of trying to resolve the issue the 'manager' (I say this because he was both condescending and unprofessional) then sent me off to get lost in the paperwork of some 'corporate office.'<br /><br />I love Amazon, and I love the convenience of online shopping--I would have been a FREQUENT customer of GiftCard Mall, but this business isn't a business at all. These guys take your order and your HARD-EARNED MONEY, and then throw an old, previously used giftcard in the mail hoping it's the right store, with the right amount, going to the right location--if not, oh well! It will be your fault...but only because you still chose to order from them after reading this.<br /><br />From now on, I will be buying my giftcards the old-fashioned way--if it ain't broke...</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">147</td>
+          <td>⭐⭐⭐⭐⭐</td>
+          <td class="title">Very cute!</td>
+          <td class="text">Very cute and arrived on time.</td>
+          <td><span class="tag truth">POSITIVE</span></td>
+          <td><span class="tag ok">POSITIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">joy</td>
+          <td class="emo">anticipation</td>
+        </tr>
+        <tr class="">
+          <td class="idx">148</td>
+          <td>⭐</td>
+          <td class="title">One Star</td>
+          <td class="text">This card was not activated for use. Could not return it.</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr>
+        <tr class="">
+          <td class="idx">149</td>
+          <td>⭐</td>
+          <td class="title">That I can use it</td>
+          <td class="text">The one did not work.  Won’t buy again</td>
+          <td><span class="tag truth">NEGATIVE</span></td>
+          <td><span class="tag ok">NEGATIVE</span></td>
+          <td><span class="tag hit">match</span></td>
+          <td class="emo">anger</td>
+          <td class="emo">—</td>
+        </tr></tbody>
+        </table>
+      </div>
+    </div>
+</div>
+<script>
+(function(){
+  const fc = document.getElementById('fclass');
+  const fv = document.getElementById('fverdict');
+  const tbody = document.getElementById('tbody');
+  const count = document.getElementById('count');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  const isMatch = tr => !tr.classList.contains('row-wrong');
+  function clsOf(tr){ return tr.querySelector('.tag.truth').textContent; }
+  function apply(){
+    const cc = fc.value, vv = fv.value;
+    const show = rows.filter(tr => {
+      const okc = cc==='all' || clsOf(tr)===cc;
+      const okv = vv==='all' ? true : (vv==='match' ? isMatch(tr) : !isMatch(tr));
+      return okc && okv;
+    });
+    rows.forEach(tr => tr.style.display = show.includes(tr) ? '' : 'none');
+    count.textContent = show.length + ' / ' + rows.length + ' reviews';
+  }
+  apply();
+  [fc, fv].forEach(el => { el.addEventListener('change', apply); el.addEventListener('input', apply); });
+})();
+</script>
+</body></html>

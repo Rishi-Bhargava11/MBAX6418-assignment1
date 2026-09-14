@@ -1,0 +1,3 @@
+# MBAX 6418 machine-learning deps
+openai>=1.30.0
+python-dotenv>=1.0.0

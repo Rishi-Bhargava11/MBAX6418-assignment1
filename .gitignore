@@ -1,0 +1,15 @@
+# dotenv / secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Large, re-downloadable data file (Amazon Reviews '23)
+data/Gift_Cards.jsonl.gz
+
+# macOS/editor cruft
+.DS_Store
