@@ -31,7 +31,7 @@ def _load_dotenv(path: Path) -> None:
 _load_dotenv(BASE_DIR / ".env")
 
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "http://dobolyi.com:9000/v1")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "6418")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "DeepSeek-V4-Flash-0731")
 
 # Fixed random seed so any sampling is reproducible run-to-run.
